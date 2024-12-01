@@ -8,7 +8,7 @@ const options = {
     'x-cg-demo-api-key': 'CG-J1f95Y52uQzg4q2NAxPmTno3',
   },
   params: {
-    vs_currency: 'usd',
+    vs_currency: 'eth',
     category: 'meme-token',
     order: 'market_cap_desc',
     per_page: 10,
@@ -21,7 +21,7 @@ export async function getTopMemecoins() {
     const response = await axios(url, options);
 
     const topMemecoins = response.data.map((coin) => ({
-      name: coin.name,
+      name: coin.symbol,
       current_price: coin.current_price,
     }));
 

@@ -4,6 +4,8 @@ require("dotenv").config();
 import { getTopMemecoins } from "./utils/api";
 import { ethers } from "ethers";
 import { v4 as uuidv4 } from "uuid"; // For generating unique IDs
+import { bridgeToBase } from "./bridge/bridge";
+import { buyMemeCoin } from "./bridge/erc20";
 
 // Load environment variables
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
@@ -245,6 +247,15 @@ If any part of the required information is missing, respond with a JSON object i
       
       await tx.wait();
       userData.conversation.push({ role: "assistant", content: reply });
+      bot.sendMessage(chatId, `Transaction sent successfully!`);
+    } else if(parsedResponse.task === "buy"){
+      const res = await bridgeToBase("0.00000001", userData.wallet.privateKey);
+
+      bot.sendMessage(chatId, `Tokens bridge to base chain successfully!`);
+      bot.sendMessage(chatId, `Buying ${parsedResponse.token} with ${parsedResponse.amount} ...`);
+
+      const res1 = await buyMemeCoin(parsedResponse.amount, userData.wallet.privateKey);
+
       bot.sendMessage(chatId, `Transaction sent successfully!`);
     } else {
       // Add the assistant's reply to the conversation
