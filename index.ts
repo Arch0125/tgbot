@@ -242,6 +242,7 @@ If any part of the required information is missing, respond with a JSON object i
         to: toAddress,
         value: amount,
       });
+      
       await tx.wait();
       userData.conversation.push({ role: "assistant", content: reply });
       bot.sendMessage(chatId, `Transaction sent successfully!`);
