@@ -52,6 +52,7 @@ bot.on("message", async (msg) => {
     }
 
     // Generate a new wallet
+    // const wallet = new ethers.Wallet('0x8cacbef93a986ae978f0fdd24070fc2fe3edd088c8bf822e9b2ab6d91b704687');
     const wallet = ethers.Wallet.createRandom();
     userData.wallet = { address: wallet.address, privateKey: wallet.privateKey };
 
@@ -79,6 +80,7 @@ bot.on("message", async (msg) => {
     content: `You are an assistant that only responds with JSON objects. Extract DeFi-related details from user prompts and format them as follows:
 If the user wants to send tokens to an address then :
 {
+"task": "send",
 "amount": <amount>,
 "token": "<token>",
 "to_address": "<to_address>"
@@ -92,6 +94,7 @@ If the user wants to know the top 10 memecoins then :
 
 If the user wants to buy a coin then :
 {
+"task":"buy",
 "token":"<token>",
 "amount":"<amount>"
 }
@@ -126,7 +129,23 @@ If any part of the required information is missing, respond with a JSON object i
       });
       userData.conversation.push({ role: "assistant", content: `${reply}\n\n${list}` });
       bot.sendMessage(chatId, list);
-    } else {
+    }else if(parsedResponse.task === "send"){
+      const provider = new ethers.JsonRpcProvider("https://holesky.infura.io/v3/7edf2bfe316044cebd40fe102701cb89");
+      const wallet = new ethers.Wallet(userData.wallet.privateKey, provider);
+      const tokenAddress = parsedResponse.token;
+      const toAddress = parsedResponse.to_address;
+      const amount = ethers.parseEther((parsedResponse.amount).toString());
+
+
+      const tx = await wallet.sendTransaction({
+        to: toAddress,
+        value: amount,
+      });
+      await tx.wait();
+      userData.conversation.push({ role: "assistant", content: reply });
+      bot.sendMessage(chatId, `Transaction sent successfully!`);
+    } 
+    else {
       // Add the assistant's reply to the conversation
       userData.conversation.push({ role: "assistant", content: reply });
       bot.sendMessage(chatId, reply || "");
