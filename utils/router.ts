@@ -3,7 +3,7 @@ import axios from "axios";
 // import { evmSignerFromPrivateKeyAndRpc } from "@routerprotocol/asset-transfer-sdk-ts";
 
 async function main() {
-      const PATH_FINDER_API_URL = "https://api.pf.testnet.routerprotocol.com/api"
+      const PATH_FINDER_API_URL = "https://k8-testnet-pf.routerchain.dev/"
     const getQuote = async (params) => {
         const endpoint = "v2/quote";
         const quoteUrl = `${PATH_FINDER_API_URL}/${endpoint}`;
@@ -16,13 +16,13 @@ async function main() {
     };
 
     const quoteParams = {
-        fromTokenAddress: '0x5620cDb94BaAaD10c20483bd8705DA711b2Bc0a3',
-        toTokenAddress: '0x87C51CD469A0E1E2aF0e0e597fD88D9Ae4BaA967',
+        fromTokenAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+        toTokenAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
         amount: 1,
         fromTokenChainId: "17000",
-        toTokenChainId: "85432", // Fuji
+        toTokenChainId: "11155111",
 
-        widgetId: 0,
+        widgetId: 267,
     };
 
     const quoteData = await getQuote(quoteParams);

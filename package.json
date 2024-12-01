@@ -13,6 +13,7 @@
     "@passwordless-id/webauthn": "^2.1.2",
     "@routerprotocol/asset-transfer-sdk-ts": "^0.4.0-beta-2",
     "axios": "^1.7.8",
+    "circomlib": "^2.0.5",
     "dotenv": "^16.4.5",
     "ethers": "6.13.4",
     "node-telegram-bot-api": "^0.66.0",
