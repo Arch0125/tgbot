@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passkey Registration</title>
+  <script type="module">
+    // Dynamically expose the `registerPasskey` function to the global scope
+    (async () => {
+      const { client } = await import('https://unpkg.com/@passwordless-id/webauthn@1.2.6/dist/webauthn.min.js');
+
+      async function registerPasskey() {
+        const challenge = "a7c61ef9-dc23-4806-b486-2428938a547e"; // Replace with your actual challenge
+
+        try {
+          // Perform registration
+          const registration = await client.register("Arnaud", challenge, {
+            authenticatorType: "auto",
+            userVerification: "required",
+            timeout: 60000,
+            attestation: false,
+            userHandle: crypto.randomUUID(), // Generate a random UUID for userHandle
+            debug: false,
+          });
+
+          console.log("Registration successful:", registration);
+
+          // Display success message
+          document.getElementById("message").textContent = "Passkey registration successful!";
+        } catch (error) {
+          console.error("Registration failed:", error);
+
+          // Display error message
+          document.getElementById("message").textContent = `Error: ${error.message}`;
+        }
+      }
+
+      // Attach `registerPasskey` to the global scope
+      window.registerPasskey = registerPasskey;
+    })();
+  </script>
+</head>
+<body>
+  <h1>Passkey Registration</h1>
+  <p>Click the button below to register your passkey:</p>
+  <button onclick="registerPasskey()">Register Passkey</button>
+  <p id="message"></p>
+</body>
+</html>
