@@ -6,6 +6,7 @@ import { ethers } from "ethers";
 import { v4 as uuidv4 } from "uuid"; // For generating unique IDs
 import { bridgeToBase } from "./bridge/bridge";
 import { buyMemeCoin } from "./bridge/erc20";
+import { getBalance } from "./utils/balance";
 
 // Load environment variables
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
@@ -97,7 +98,20 @@ bot.on("message", async (msg) => {
 
     bot.sendMessage(chatId, response, { parse_mode: "Markdown" });
     return;
-  } else if (text.startsWith("/request")) {
+  }else if(text?.startsWith("/balance")){
+    const userData = userMemory.get(chatId);
+    if (!userData.wallet) {
+      bot.sendMessage(
+        chatId,
+        "You need to create a wallet first using /wallet."
+      );
+      return;
+    }
+    const bal = await getBalance(userData?.wallet.privateKey)
+    bot.sendMessage(chatId, `Your balance is ${bal} USD`);
+    return;
+  }
+   else if (text.startsWith("/request")) {
     const parts = text.split(" ");
     if (parts.length < 4) {
       bot.sendMessage(chatId, "Usage: /request @username amount token");
@@ -249,7 +263,10 @@ If any part of the required information is missing, respond with a JSON object i
       userData.conversation.push({ role: "assistant", content: reply });
       bot.sendMessage(chatId, `Transaction sent successfully!`);
     } else if(parsedResponse.task === "buy"){
-      const res = await bridgeToBase("0.00000001", userData.wallet.privateKey);
+
+      const topMemecoins = await getTopMemecoins();
+
+      const res = await bridgeToBase((topMemecoins[0].current_price * parsedResponse.amount).toString(), userData.wallet.privateKey);
 
       bot.sendMessage(chatId, `Tokens bridge to base chain successfully!`);
       bot.sendMessage(chatId, `Buying ${parsedResponse.token} with ${parsedResponse.amount} ...`);

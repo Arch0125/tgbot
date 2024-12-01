@@ -117,10 +117,11 @@ export async function bridgeToBase(amount: string, pvtKey: string) {
 
     const RELAYER_PVT_KEY = process.env.RELAYER_PVT_KEY;
     const relayerWallet = new ethers.Wallet(RELAYER_PVT_KEY, baseSepoliaProvider);
-    await relayerWallet.sendTransaction({
+    const tx = await relayerWallet.sendTransaction({
         to: walletSepolia.address,
         value: amountWei,
     });
+    await tx.wait();
 
     return 1;
 }
