@@ -112,6 +112,21 @@ bot.on("message", async (msg) => {
     bot.sendMessage(chatId, `Your balance is ${bal} USD`);
     return;
   }
+  else if(text?.startsWith("/onramp")){
+    bot.sendMessage(chatId, `Load funds into your wallet`, {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "Onramp",
+              url: "https://onramp.money/app/?appId=1",
+            }
+          ],
+        ],
+      },
+    });
+    return
+  }
   else if (text.startsWith("/request")) {
     const parts = text.split(" ");
     if (parts.length < 4) {
