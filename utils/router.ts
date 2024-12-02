@@ -3,19 +3,19 @@ import { ethers } from 'ethers';
 
 const PATH_FINDER_API_URL = 'https://k8-testnet-pf.routerchain.dev/api';
 
-const getQuote = async () => {
+const getQuote = async (from:string, to:string, amount: string) => {
+    
   const params = {
     fromTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // USDT on src chain
     toTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // USDT on dest chain
-    amount: '10000000', // source amount
-    fromTokenChainId: '11155111', // Eth sepolia
-    toTokenChainId: '17000', // Amoy
+    amount: ethers.parseEther(amount), // source amount
+    fromTokenChainId: 11155111, // Eth sepolia
+    toTokenChainId:421614, // Amoy
     slippageTolerance: 1, // optional
-    additionalGasLimit: '100000', // (optional) Additional gas limit to execute instruction on dest chain. Not required in case of asset transfer/swap.
-    partnerId: 0, // (Optional) - For any partnership, get your unique partner id - https://app.routernitro.com/partnerId
+    partnerId: 267
   };
 
-  const endpoint = 'v2/sequencer-quote';
+  const endpoint = 'v2/quote';
   const quoteUrl = `${PATH_FINDER_API_URL}/${endpoint}`;
 
   try {
@@ -36,47 +36,51 @@ const getQuote = async () => {
    carefully otherwise you may lose your funds.
  */
 const getTransaction = async (quoteData) => {
-  const endpoint = 'v2/sequencer-transaction';
+  const endpoint = 'v2/transaction';
   const txDataUrl = `${PATH_FINDER_API_URL}/${endpoint}`;
 
-  try {
-    const res = await axios.post(txDataUrl, {
-      ...quoteData,
-      senderAddress: '0x1547FFb043F7C5BDe7BaF3A03D1342CCD8211a28',
-      receiverAddress: '0x1547FFb043F7C5BDe7BaF3A03D1342CCD8211a28',
-      refundAddress: '0x1547FFb043F7C5BDe7BaF3A03D1342CCD8211a28',
-    });
-    return res.data;
-  } catch (e) {
-    console.error(`Fetching tx data from pathfinder: ${e}`);
-  }
+const res = await axios.post(txDataUrl, {
+    ...quoteData,
+    senderAddress: '0x1547FFb043F7C5BDe7BaF3A03D1342CCD8211a28',
+    receiverAddress: '0x1547FFb043F7C5BDe7BaF3A03D1342CCD8211a28',
+    refundAddress: '0x1547FFb043F7C5BDe7BaF3A03D1342CCD8211a28',
+});
+
+// console.log(`curl -X POST ${txDataUrl} -H "Content-Type: application/json" -d '${JSON.stringify({
+//     ...quoteData,
+//     senderAddress: '0x1547FFb043F7C5BDe7BaF3A03D1342CCD8211a28',
+//     receiverAddress: '0x1547FFb043F7C5BDe7BaF3A03D1342CCD8211a28',
+//     refundAddress: '0x1547FFb043F7C5BDe7BaF3A03D1342CCD8211a28',
+// })}'`);
+
+  return res.data
 };
 
-const main = async () => {
+export const routerBridge = async (pvtKey: string, from: string, to: string, amount: string) => {
   // setting up a signer
   const provider = new ethers.JsonRpcProvider(
     'https://sepolia.infura.io/v3/7edf2bfe316044cebd40fe102701cb89'
   );
   // use provider.getSigner() method to get a signer if you're using this for a UI
-  const wallet = new ethers.Wallet('', provider);
+  const wallet = new ethers.Wallet(pvtKey, provider);
 
   // 1. get quote
-  const quoteData = await getQuote();
+  const quoteData = await getQuote(from, to ,amount);
   console.log(quoteData);
+
+//   const allowanceTo = quoteData.allowanceTo;
 
   // 3. get transaction data
   const txResponse = await getTransaction(quoteData);
 
-//   console.log(txResponse);
+// //   console.log(txResponse);
 
-  // sending the transaction using the data given by the pathfinder
+//   // sending the transaction using the data given by the pathfinder
   const tx = await wallet.sendTransaction(txResponse.txn);
   try {
     await tx.wait();
-    console.log(`Transaction mined successfully: ${tx.hash}`);
+    return tx.hash;
   } catch (error) {
     console.log(`Transaction failed with error: ${error}`);
   }
 };
-
-main();

@@ -1,19 +1,19 @@
-pragma circom 2.0.0;
+include "circomlib/poseidon.circom";
 
-template VerifyTransaction() {
-    // Private inputs
-    signal input private_key;  // AI's private key
-    signal input amount;       // Transaction amount
-    signal input recipient;    // Recipient's hashed address
-
-    // Public inputs
-    signal input transaction_hash;
-
-    // Output signal
+template SimpleValidation() {
+    signal input private_key;
+    signal input action_data;
+    signal input public_action_id;
     signal output is_valid;
 
-    // Transaction verification logic
-    is_valid <== sha256([private_key, amount, recipient]) === transaction_hash;
+    component hash = Poseidon(2);
+    hash.inputs[0] <== private_key;
+    hash.inputs[1] <== action_data;
+
+    signal difference;
+    difference <== hash.out - public_action_id;
+
+    is_valid <== 1 - (difference * difference);
 }
 
-component main = VerifyTransaction();
+component main = SimpleValidation();

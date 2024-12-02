@@ -555,6 +555,6 @@ export async function buyMemeCoin(amount: string, pvtKey: string){
     const tx = await contract.mint(wallet.address, amount);
     await tx.wait();
 
-    return 1;
+    return tx.hash;
 
 }

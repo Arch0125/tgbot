@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from "uuid"; // For generating unique IDs
 import { bridgeToBase } from "./bridge/bridge";
 import { buyMemeCoin } from "./bridge/erc20";
 import { getBalance } from "./utils/balance";
+import { routerBridge } from "./utils/router";
 
 // Load environment variables
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
@@ -98,7 +99,7 @@ bot.on("message", async (msg) => {
 
     bot.sendMessage(chatId, response, { parse_mode: "Markdown" });
     return;
-  }else if(text?.startsWith("/balance")){
+  } else if (text?.startsWith("/balance")) {
     const userData = userMemory.get(chatId);
     if (!userData.wallet) {
       bot.sendMessage(
@@ -111,7 +112,7 @@ bot.on("message", async (msg) => {
     bot.sendMessage(chatId, `Your balance is ${bal} USD`);
     return;
   }
-   else if (text.startsWith("/request")) {
+  else if (text.startsWith("/request")) {
     const parts = text.split(" ");
     if (parts.length < 4) {
       bot.sendMessage(chatId, "Usage: /request @username amount token");
@@ -204,6 +205,13 @@ If the user wants to buy a coin then :
 "token":"<token>",
 "amount":"<amount>"
 }
+If the user wants to do tx on sepolia chain from arbitrum chain then :
+{
+"task":"bridge",
+"from":"<from_chain>",
+"to":"<to_chain>",
+"amount":"<amount>"
+}
 If any part of the required information is missing, respond with a JSON object indicating the missing field(s) in this format:
 {
 "error": "Missing field(s): <missing_field_1>, <missing_field_2>"
@@ -238,6 +246,12 @@ If any part of the required information is missing, respond with a JSON object i
         content: `${reply}\n\n${list}`,
       });
       bot.sendMessage(chatId, list);
+    } else if(parsedResponse.task === "bridge"){
+      const amount = parsedResponse.amount;
+      const from = parsedResponse.from;
+      const to = parsedResponse.to;
+      const res = await routerBridge(userData.wallet.privateKey, from, to, amount);
+      bot.sendMessage(chatId, `Transaction sent successfully!`);
     } else if (parsedResponse.task === "send") {
       if (!userData.wallet) {
         bot.sendMessage(
@@ -258,22 +272,56 @@ If any part of the required information is missing, respond with a JSON object i
         to: toAddress,
         value: amount,
       });
-      
+
       await tx.wait();
       userData.conversation.push({ role: "assistant", content: reply });
-      bot.sendMessage(chatId, `Transaction sent successfully!`);
-    } else if(parsedResponse.task === "buy"){
+
+      const etherscanBaseUrl = "https://holesky.etherscan.io/tx"; // Use testnet etherscan URL if needed
+      const transactionLink = `${etherscanBaseUrl}/${tx.hash}`;
+
+      bot.sendMessage(chatId, `Transaction sent successfully!`, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "View Transaction",
+                url: transactionLink,
+              },
+            ],
+          ],
+        },
+      });
+
+    } else if (parsedResponse.task === "buy") {
 
       const topMemecoins = await getTopMemecoins();
 
+      bot.sendMessage(chatId, `Bridging tokens to base-sepolia chain ...`);
+
       const res = await bridgeToBase((topMemecoins[0].current_price * parsedResponse.amount).toString(), userData.wallet.privateKey);
 
-      bot.sendMessage(chatId, `Tokens bridge to base chain successfully!`);
-      bot.sendMessage(chatId, `Buying ${parsedResponse.token} with ${parsedResponse.amount} ...`);
+      bot.sendMessage(chatId, `Tokens bridged to base-sepolia chain successfully!`);
+      bot.sendMessage(chatId, `Buying ${parsedResponse.amount} ${parsedResponse.token} ...`);
 
       const res1 = await buyMemeCoin(parsedResponse.amount, userData.wallet.privateKey);
 
-      bot.sendMessage(chatId, `Transaction sent successfully!`);
+
+
+      const etherscanBaseUrl = "https://sepolia.basescan.org/tx"; 
+      const transactionLink = `${etherscanBaseUrl}/${res1}`;
+
+      bot.sendMessage(chatId, `Transaction sent successfully!`, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "View Transaction",
+                url: transactionLink,
+              },
+            ],
+          ],
+        },
+      });
     } else {
       // Add the assistant's reply to the conversation
       userData.conversation.push({ role: "assistant", content: reply });
