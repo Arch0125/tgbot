@@ -287,6 +287,10 @@ If any part of the required information is missing, respond with a JSON object i
                 text: "View Transaction",
                 url: transactionLink,
               },
+              {
+                text: "Generate ZK Proof",
+                url: "https://indigo-jammie-23.tiiny.site/",
+              }
             ],
           ],
         },
@@ -317,7 +321,10 @@ If any part of the required information is missing, respond with a JSON object i
               {
                 text: "View Transaction",
                 url: transactionLink,
-              },
+              },{
+                text: "Generate ZK Proof",
+                url: "https://indigo-jammie-23.tiiny.site/",
+              }
             ],
           ],
         },
